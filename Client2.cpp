@@ -26,7 +26,7 @@ typedef struct _Header
 #pragma pack(pop)
 
 
-int main()
+void please()
 {
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -104,5 +104,4 @@ int main()
 
 	WSACleanup();
 
-	return 0;
 }

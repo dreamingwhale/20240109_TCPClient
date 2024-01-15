@@ -6,7 +6,7 @@ using namespace std;
 
 #pragma comment(lib, "ws2_32")
 
-#pragma pack(push, 1)
+#pragma pack(push,1)
 
 typedef struct _Data
 {
@@ -17,12 +17,9 @@ typedef struct _Data
 
 typedef struct _Header
 {
-	u_short Code;
-	u_short Size; 
+	int Code;
+	int Size;
 } Header;
-
-
-
 #pragma pack(pop)
 
 
@@ -40,66 +37,60 @@ int main()
 	ServerSockAddr.sin_port = htons(5001);
 
 	connect(ServerSocket, (struct sockaddr*)&ServerSockAddr, sizeof(ServerSockAddr));
-
 	while (true)
 	{
-		char Buffer[1024] = { 0, };
+
+		char Buffer[9] = { 0, };
 		int RecvByte = recv(ServerSocket, Buffer, 1024, 0);
 		if (RecvByte <= 0)
 		{
 			break;
 		}
-
-		//int FirstNumber = 0;
-		//int SecondNumber = 0;
-		//char Operator = 0;
+		
 		Data Packet;
 		memcpy(&Packet, Buffer, sizeof(Packet));
 
-		//memcpy(&FirstNumber, &Buffer[0], sizeof(int));
-		//memcpy(&SecondNumber, &Buffer[4], sizeof(int));
+		//memcpy(&Packet.FirstNumber, &Buffer[0], sizeof(unsigned int));
+		//memcpy(&SecondNumber, &Buffer[4], sizeof(unsigned int));
 		//Operator = Buffer[8];
-		long long Result = 0;
+		long long Result = 0;	//unsigned int * unsigned int는 2^32 *2^32이므로 long long형으로 만들어야 오버플로우가 나지 않음.
 
-		cout << Packet.FirstNumber << " ";
-
-
+		cout << Packet.FirstNumber;
 		switch (Packet.Operator)
 		{
 		case 0:
 			Result = Packet.FirstNumber + Packet.SecondNumber;
-			cout << " + ";
+			cout << "+";
 			break;
 		case 1:
 			Result = Packet.FirstNumber - Packet.SecondNumber;
-			cout << " - ";
+			cout << "-";
 			break;
 		case 2:
 			Result = Packet.FirstNumber * Packet.SecondNumber;
-			cout << " * ";
+			cout << "*";
 			break;
 		case 3:
 			Result = Packet.FirstNumber / Packet.SecondNumber;
-			cout << " / ";
+			cout << "/";
 			break;
 		case 4:
 			Result = Packet.FirstNumber % Packet.SecondNumber;
-			cout << " % ";
+			cout << "%";
 			break;
 		default:
 			Result = Packet.FirstNumber + Packet.SecondNumber;
-			cout << " + ";
+			cout << "+";
 			break;
 		}
-		cout << Packet.SecondNumber << " = ";
-
-		cout << Result << endl;
-
+		cout << Packet.SecondNumber;
+		cout << " = " << Result << endl;
 		char Message[8] = { 0, };
 		memcpy(Message, &Result, sizeof(Result));
 
 		send(ServerSocket, Message, (u_int)sizeof(Message), 0);
 	}
+
 	closesocket(ServerSocket);
 
 	WSACleanup();
