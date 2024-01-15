@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <WinSock2.h>
-#include <string>
+#include <ws2tcpip.h>
 
 #pragma comment(lib, "ws2_32")
 
@@ -11,111 +11,45 @@ using namespace std;
 int main()
 {
 	WSAData wsaData;
-	int Result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (Result != 0)
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
+
+	HOSTENT* ServerInfo;
+	ServerInfo = gethostbyname("www.naver.com");
+	if (ServerInfo)
 	{
-		cout << "Winsock dll error : " << GetLastError() << endl;
-		exit(-1);
+		if (ServerInfo->h_addrtype == AF_INET)
+		{
+			cout << ServerInfo->h_name << endl;
+			cout << ServerInfo->h_aliases << endl;
+			int i = 0;
+			IN_ADDR IP;
+			while (ServerInfo->h_addr_list[i] != 0)
+			{
+				//4자리씩 IP의 주소를 잘라서 저장
+				IP.s_addr = *(u_long*)ServerInfo->h_addr_list[i];
+				//u_long temp = *(u_long*)ServerInfo->h_addr_list[i];
+				printf("ip: %s\n", inet_ntoa(IP));
+				i++;
+			}
+			/*
+			for (int i = 0; i < ServerInfo->h_length; i++)
+			{
+				IP.s_addr = *(u_long*)ServerInfo->h_addr_list[i];
+				printf("ip: %s\n", inet_ntoa(IP));
+			}
+			*/
+		}
+	}
+	char IPAddress[] = "223.100.100.101";
+	ServerInfo = gethostbyaddr(IPAddress, strlen(IPAddress), AF_INET);
+	if (ServerInfo)
+	{
+		if (ServerInfo->h_addrtype == AF_INET)
+		{
+			cout << ServerInfo->h_name << endl;
+		}
 	}
 
-	struct sockaddr_in ServerSockAddr;
-	memset(&ServerSockAddr, 0, sizeof(ServerSockAddr));
-	ServerSockAddr.sin_family = AF_INET;
-	ServerSockAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	ServerSockAddr.sin_port = htons(40211);
-
-
-	SOCKET ServerSocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-	Result = connect(ServerSocket, (SOCKADDR*)&ServerSockAddr, sizeof(ServerSockAddr));
-	if (Result == SOCKET_ERROR)
-	{
-		cout << "can't connect. : " << GetLastError() << endl;
-		exit(-1);
-	}
-
-	while (true)
-	{
-		char RecvBuffer[1024] = { 0, };
-		int RecvByte = recv(ServerSocket, RecvBuffer, sizeof(RecvBuffer), 0);
-
-		cout << "Server Sent " << RecvBuffer << endl;
-
-		string Data = RecvBuffer;
-		size_t OperatorPosition = Data.find('+');
-		if (OperatorPosition == string::npos)
-		{
-			OperatorPosition = Data.find('-');
-			if (OperatorPosition == string::npos)
-			{
-				OperatorPosition = Data.find('*');
-				if (OperatorPosition == string::npos)
-				{
-					OperatorPosition = Data.find('/');
-					if (OperatorPosition == string::npos)
-					{
-						OperatorPosition = Data.find('%');
-					}
-				}
-			}
-		}
-
-		string FirstNumberString = Data.substr(0, OperatorPosition);
-		string SecondNumberString = Data.substr(OperatorPosition + 1,
-			Data.length() - OperatorPosition - 1);
-
-		cout << FirstNumberString << endl;
-		cout << SecondNumberString << endl;
-
-		int FirstNumber = stoi(FirstNumberString);
-		int SecondNumber = stoi(SecondNumberString);
-		int ResultNumber = 0;
-		OperatorPosition = Data.find('+');
-		if (OperatorPosition == string::npos)
-		{
-			OperatorPosition = Data.find('-');
-			if (OperatorPosition == string::npos)
-			{
-				OperatorPosition = Data.find('*');
-				if (OperatorPosition == string::npos)
-				{
-					OperatorPosition = Data.find('/');
-					if (OperatorPosition == string::npos)
-					{
-						OperatorPosition = Data.find('%');
-						ResultNumber = FirstNumber % SecondNumber;
-					}
-					else
-					{
-						ResultNumber = FirstNumber / +SecondNumber;
-					}
-				}
-				else
-				{
-					ResultNumber = FirstNumber * SecondNumber;
-				}
-			}
-			else
-			{
-				ResultNumber = FirstNumber - SecondNumber;
-			}
-		}
-		else
-		{
-			ResultNumber = FirstNumber + SecondNumber;
-		}
-
-
-
-		char Buffer[1024] = { 0, };
-		sprintf_s(Buffer, 1024, "%d", ResultNumber);
-
-		int SentByte = send(ServerSocket, Buffer, (int)(strlen(Buffer) + 1), 0);
-
-		cout << Buffer << endl;
-	}
-
-	closesocket(ServerSocket);
 
 	WSACleanup();
 
