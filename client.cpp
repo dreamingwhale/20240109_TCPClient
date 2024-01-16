@@ -1,29 +1,14 @@
+#define _CRT_SECURE_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 #include <iostream>
 #include <winsock2.h>
 #include <WS2tcpip.h>
+#include "Packet.h"
 
 using namespace std;
 
 #pragma comment(lib, "ws2_32")
-
-#pragma pack(push, 1)
-
-typedef struct _Data
-{
-	int FirstNumber;
-	int SecondNumber;
-	char Operator;
-} Data;
-
-typedef struct _Header
-{
-	u_short Code;
-	u_short Size; 
-} Header;
-
-
-
-#pragma pack(pop)
 
 
 int main()
@@ -44,61 +29,91 @@ int main()
 	while (true)
 	{
 		char Buffer[1024] = { 0, };
-		int RecvByte = recv(ServerSocket, Buffer, 1024, 0);
+		int RecvByte = recv(ServerSocket, Buffer, 4, MSG_WAITALL);
 		if (RecvByte <= 0)
 		{
 			break;
 		}
-
-		//int FirstNumber = 0;
-		//int SecondNumber = 0;
-		//char Operator = 0;
-		Data Packet;
-		memcpy(&Packet, Buffer, sizeof(Packet));
-
-		//memcpy(&FirstNumber, &Buffer[0], sizeof(int));
-		//memcpy(&SecondNumber, &Buffer[4], sizeof(int));
-		//Operator = Buffer[8];
-		long long Result = 0;
-
-		cout << Packet.FirstNumber << " ";
-
-
-		switch (Packet.Operator)
+		Header PacketHeader;
+		memcpy(&PacketHeader, Buffer, sizeof(Header));
+		if (PacketHeader.PacketType == (unsigned short)EPacketType::Calculate)
 		{
-		case 0:
-			Result = Packet.FirstNumber + Packet.SecondNumber;
-			cout << " + ";
-			break;
-		case 1:
-			Result = Packet.FirstNumber - Packet.SecondNumber;
-			cout << " - ";
-			break;
-		case 2:
-			Result = Packet.FirstNumber * Packet.SecondNumber;
-			cout << " * ";
-			break;
-		case 3:
-			Result = Packet.FirstNumber / Packet.SecondNumber;
-			cout << " / ";
-			break;
-		case 4:
-			Result = Packet.FirstNumber % Packet.SecondNumber;
-			cout << " % ";
-			break;
-		default:
-			Result = Packet.FirstNumber + Packet.SecondNumber;
-			cout << " + ";
-			break;
+			char* DataBuffer = new char[PacketHeader.Length] ;
+			int RecvByte = recv(ServerSocket, DataBuffer, PacketHeader.Length, MSG_WAITALL);
+			if (RecvByte <= 0)
+			{
+				break;
+			}
+
+			Data Packet;
+			memcpy(&Packet, DataBuffer, sizeof(Packet));
+
+			//memcpy(&FirstNumber, &Buffer[0], sizeof(int));
+			//memcpy(&SecondNumber, &Buffer[4], sizeof(int));
+			//Operator = Buffer[8];
+			long long Result = 0;
+
+			cout << Packet.FirstNumber << " ";
+
+
+			switch (Packet.Operator)
+			{
+			case 0:
+				Result = Packet.FirstNumber + Packet.SecondNumber;
+				cout << " + ";
+				break;
+			case 1:
+				Result = Packet.FirstNumber - Packet.SecondNumber;
+				cout << " - ";
+				break;
+			case 2:
+				Result = Packet.FirstNumber * Packet.SecondNumber;
+				cout << " * ";
+				break;
+			case 3:
+				Result = Packet.FirstNumber / Packet.SecondNumber;
+				cout << " / ";
+				break;
+			case 4:
+				Result = Packet.FirstNumber % Packet.SecondNumber;
+				cout << " % ";
+				break;
+			default:
+				Result = Packet.FirstNumber + Packet.SecondNumber;
+				cout << " + ";
+				break;
+			}
+			cout << Packet.SecondNumber << " = ";
+
+			cout << Result << endl;
+
+			char Message[8] = { 0, };
+			memcpy(Message, &Result, sizeof(Result));
+
+			send(ServerSocket, Message, (u_int)sizeof(Message), 0);
+			delete[] DataBuffer;
 		}
-		cout << Packet.SecondNumber << " = ";
+		else if(PacketHeader.PacketType == (unsigned short)EPacketType::Image)
+		{
+			FILE* OutputFile = fopen("chichichi.jpg", "wb");
 
-		cout << Result << endl;
+			char* FileBuffer = new char[PacketHeader.Length];
 
-		char Message[8] = { 0, };
-		memcpy(Message, &Result, sizeof(Result));
+			char Buffer[1024] = { 0, };
 
-		send(ServerSocket, Message, (u_int)sizeof(Message), 0);
+			int RecvByte = recv(ServerSocket, FileBuffer, PacketHeader.Length, MSG_WAITALL);
+			if (RecvByte <= 0)
+			{
+				break;
+			}
+			size_t WriteSize = fwrite(FileBuffer, sizeof(char), RecvByte, OutputFile);
+			
+
+			fclose(OutputFile);
+			delete[] FileBuffer;
+		}
+
+				
 	}
 	closesocket(ServerSocket);
 
