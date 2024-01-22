@@ -6,6 +6,7 @@ enum class EPacketType
 {
 	Calculate = 10
 	, Image = 20
+	, Move = 30
 	, MAX
 };
 
@@ -27,4 +28,4 @@ typedef struct _Data	//typedef : c언어에서 사용하는 키워드. 앞으로 ~라고 부르겠�
 
 #pragma pack(pop)
 
-#endif //__PACKET_H
+#endif //__PACKET_H__

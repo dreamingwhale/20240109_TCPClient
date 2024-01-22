@@ -36,17 +36,23 @@ int main()
 		}
 		Header PacketHeader;
 		memcpy(&PacketHeader, Buffer, sizeof(Header));
+		Data Packet;
+
+
+		
+		///////////////////Calculate////////////////////////
+
 		if (PacketHeader.PacketType == (unsigned short)EPacketType::Calculate)
 		{
-			char* DataBuffer = new char[PacketHeader.Length] ;
+			char* DataBuffer = new char[PacketHeader.Length];
 			int RecvByte = recv(ServerSocket, DataBuffer, PacketHeader.Length, MSG_WAITALL);
 			if (RecvByte <= 0)
 			{
 				break;
 			}
 
-			Data Packet;
 			memcpy(&Packet, DataBuffer, sizeof(Packet));
+
 
 			//memcpy(&FirstNumber, &Buffer[0], sizeof(int));
 			//memcpy(&SecondNumber, &Buffer[4], sizeof(int));
@@ -93,11 +99,13 @@ int main()
 			send(ServerSocket, Message, (u_int)sizeof(Message), 0);
 			delete[] DataBuffer;
 		}
-		else if(PacketHeader.PacketType == (unsigned short)EPacketType::Image)
+		else if (PacketHeader.PacketType == (unsigned short)EPacketType::Image)
 		{
 			FILE* OutputFile = fopen("chichichi.jpg", "wb");
 
 			char* FileBuffer = new char[PacketHeader.Length];
+
+
 
 			char Buffer[1024] = { 0, };
 
@@ -107,13 +115,14 @@ int main()
 				break;
 			}
 			size_t WriteSize = fwrite(FileBuffer, sizeof(char), RecvByte, OutputFile);
-			
+
 
 			fclose(OutputFile);
 			delete[] FileBuffer;
 		}
 
-				
+		
+
 	}
 	closesocket(ServerSocket);
 
